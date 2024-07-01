@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 
 import RoomItem from "./RoomItem";
 import SortFilter from "@/components/SortFilter";
+import Pagination from "@/components/Pagination";
 import Button from "@/components/shared/Button";
 
 import { EEnvKeys } from "@/types/enums/envKeys.enum";
@@ -159,6 +160,11 @@ export default function RoomsList({ rooms }: IRoomsListProps) {
           />
         ))}
       </div>
+      <Pagination
+        totalPages={totalPages}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+      />
     </>
   );
 }
