@@ -45,6 +45,8 @@ export default function RoomsList({ rooms }: IRoomsListProps) {
 
   const totalPages = Math.floor(rooms.length / ITEMS_PER_PAGE);
 
+  // For better component readability and further support,
+  // sorting and availability logic should have been put into separate custom hooks
   const sortFunction = useCallback(
     (a: IRoomItem, b: IRoomItem) => {
       const { field, ascOrder } = sortBy;
