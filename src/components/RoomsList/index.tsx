@@ -1,3 +1,6 @@
+"use client";
+import RoomItem from "./RoomItem";
+
 import { IRoomItem } from "@/types/roomItem.interface";
 
 interface IRoomsListProps {
@@ -7,17 +10,11 @@ interface IRoomsListProps {
 export default function RoomsList({ rooms }: IRoomsListProps) {
   return (
     <>
-      <ul>
+      <div className="grid auto-rows-min grid-cols-[repeat(2,minmax(200px,500px))] place-content-center gap-4">
         {rooms.map(room => (
-          <li key={room.id}>
-            <span>{room.name}</span>
-            <p>
-              {room.price.value}
-              <span>{room.price.currencyCode}</span>
-            </p>
-          </li>
+          <RoomItem key={room.id} room={room} />
         ))}
-      </ul>
+      </div>
     </>
   );
 }
