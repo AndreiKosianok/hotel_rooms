@@ -3,8 +3,13 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 
 import RoomItem from "./RoomItem";
 import SortFilter from "@/components/SortFilter";
+import Button from "@/components/shared/Button";
+
+import { EEnvKeys } from "@/types/enums/envKeys.enum";
 
 import { IRoomItem } from "@/types/roomItem.interface";
+import { IAvailabilityStatusResponce } from "@/types/availabilityStatusResponce.interface";
+import { ERoomAvailabilityStatus } from "@/types/enums/roomAvailabilityStatus.enum";
 import { ISortState } from "@/types/sotrState.interface";
 import { ESortByOptions } from "@/types/enums/sortOptions.enum";
 
@@ -25,6 +30,15 @@ export default function RoomsList({ rooms }: IRoomsListProps) {
     field: ESortByOptions.NAME,
     ascOrder: true,
   });
+
+  const [availabilityStatus, setAvailabilityStatus] = useState<{
+    [id: number | string]: IAvailabilityStatusResponce;
+  }>({});
+  // This state is necessary to temporarily disable buttons
+  // or to check the status of possible ongoing requests
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState<
+    Record<number, boolean>
+  >({});
 
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -77,14 +91,72 @@ export default function RoomsList({ rooms }: IRoomsListProps) {
     [],
   );
 
+  const checkAvailability = async (roomId: number) => {
+    setIsCheckingAvailability(rooms => ({ ...rooms, [roomId]: true }));
+    try {
+      const BASE_URL = EEnvKeys.BASE_URL;
+      const ENVIRONMENT_URL = EEnvKeys.ENVIRONMENT_URL;
+      const TEST_API_URL = EEnvKeys.TEST_API_URL;
+
+      const response = await fetch(
+        new URL(`${ENVIRONMENT_URL}${TEST_API_URL}/room/${roomId}`, BASE_URL),
+      );
+      const data = await response.json();
+      setAvailabilityStatus(items => ({
+        ...items,
+        [roomId]: { ...data },
+      }));
+    } catch (error) {
+      setAvailabilityStatus(items => ({
+        ...items,
+        [roomId]: { availabilityStatus: ERoomAvailabilityStatus.ERROR },
+      }));
+    } finally {
+      setIsCheckingAvailability(rooms => ({ ...rooms, [roomId]: false }));
+    }
+  };
+
+  const handleCheckAvailability = useCallback((roomId: number): void => {
+    // Here we can add some additional logic
+    checkAvailability(roomId);
+  }, []);
+
+  const checkAvailabilityForAll = async () => {
+    const roomsToCheck: number[] = [];
+
+    for (const room of preparedRoomsList) {
+      if (isCheckingAvailability[room.id]) continue;
+
+      isCheckingAvailability[room.id] = true;
+      roomsToCheck.push(room.id);
+    }
+
+    if (!roomsToCheck.length) return;
+    Promise.allSettled(roomsToCheck.map(roomId => checkAvailability(roomId)));
+  };
+
   return (
     <>
-      <div>
+      {/* I decided not to use third-party UI elements, relying on their small required number and Tailwind's styling capabilities */}
+      <div className="mx-auto flex max-w-screen-lg justify-evenly py-4">
+        {/* Perhaps this button should have been placed in a separate component,
+            because it completely duplicates the button inside the room card with its appearance */}
+        <Button
+          className="btn-primary"
+          onClick={checkAvailabilityForAll}
+          text="Check availability"
+        />
         <SortFilter sortBy={sortBy} orderChange={handleSortChange} />
       </div>
       <div className="grid auto-rows-min grid-cols-[repeat(2,minmax(200px,500px))] place-content-center gap-4">
         {preparedRoomsList.map(room => (
-          <RoomItem key={room.id} room={room} />
+          <RoomItem
+            key={room.id}
+            room={room}
+            isCheckingAvailability={!!isCheckingAvailability[room.id]}
+            status={availabilityStatus[room.id]}
+            checkAvailability={handleCheckAvailability}
+          />
         ))}
       </div>
     </>
