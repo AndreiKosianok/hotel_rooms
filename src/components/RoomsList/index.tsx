@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 
 import RoomItem from "./RoomItem";
+import SortFilter from "@/components/SortFilter";
 
 import { IRoomItem } from "@/types/roomItem.interface";
 import { ISortState } from "@/types/sotrState.interface";
@@ -68,8 +69,19 @@ export default function RoomsList({ rooms }: IRoomsListProps) {
     setPreparedRoomsList(paginatedData);
   }, [currentPage, sortedData]);
 
+  const handleSortChange = useCallback(
+    (field: ESortByOptions, ascOrder: boolean) => {
+      setSortBy({ field, ascOrder });
+      setCurrentPage(1);
+    },
+    [],
+  );
+
   return (
     <>
+      <div>
+        <SortFilter sortBy={sortBy} orderChange={handleSortChange} />
+      </div>
       <div className="grid auto-rows-min grid-cols-[repeat(2,minmax(200px,500px))] place-content-center gap-4">
         {preparedRoomsList.map(room => (
           <RoomItem key={room.id} room={room} />
